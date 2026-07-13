@@ -100,7 +100,7 @@ export function OrderModal() {
                   className="w-full rounded-full bg-neon py-3.5 text-sm font-bold text-white hover:opacity-90 transition-opacity"
                   onClick={() => {
                     const msg = items.map((ci) => `${ci.item.name} x${ci.quantity} = $${ci.item.price * ci.quantity}`).join("\n");
-                    const whatsappUrl = `https://wa.me/18091234567?text=${encodeURIComponent(`Hola! Quiero ordenar:\n${msg}\n\nTotal: $${total}`)}`;
+                    const whatsappUrl = `https://wa.me/18091234567?text=${encodeURIComponent(`Hola! Quiero ordenar:\n${msg}\n\nTotal: RD$${total}`)}`;
                     window.open(whatsappUrl, "_blank");
                     setOpen(false);
                   }}

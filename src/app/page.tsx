@@ -1,15 +1,28 @@
 "use client";
 
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { motion, useScroll, useTransform, useReducedMotion, useInView, useSpring, AnimatePresence } from "motion/react";
 import { CartProvider, useCart } from "@/components/CartProvider";
 import { OrderModal } from "@/components/OrderModal";
 import { GalleryLightbox } from "@/components/GalleryLightbox";
 import { menuData, categoryLabels, testimonials, galleryImgs, type MenuCategory, type Dietary, type MenuItem } from "@/data/menu";
 
+type PlaceData = { rating: number; userRatingCount: number; error?: string };
+
 function useNavScroll() {
   const { scrollY } = useScroll();
   return { opacity: useTransform(scrollY, [0, 120], [0, 1]) };
+}
+
+function usePlaceData() {
+  const [data, setData] = useState<PlaceData | null>(null);
+  useEffect(() => {
+    fetch("/api/places")
+      .then((r) => r.json())
+      .then(setData)
+      .catch(() => setData({ rating: 4.9, userRatingCount: 7319 }));
+  }, []);
+  return data;
 }
 
 function ImgReveal({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
@@ -297,28 +310,35 @@ function TestimonialsSection() {
 }
 
 function StatsBar() {
+  const place = usePlaceData();
+  const reviewsK = place?.userRatingCount ? Math.round(place.userRatingCount / 1000) : 7;
+  const ratingStr = place?.rating?.toFixed(1) ?? "4.9";
+  const [whole, dec] = ratingStr.split(".");
+
   return (
     <div className="border-y" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)" }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-3 md:grid-cols-5 gap-6 py-10">
-          {[
-            { n: 24, suffix: "/7", label: "Abierto" },
-            { n: 365, suffix: "", label: "Dias al ano" },
-            { n: 50, suffix: "K+", label: "Clientes Felices" },
-            { n: 4.9, suffix: "", label: "Calificacion", dec: true },
-            { n: 7, suffix: "K+", label: "Reviews" },
-          ].map((s, i) => (
-            <div key={i} className="text-center">
-              <p className="font-display text-3xl md:text-4xl leading-none" style={{ color: "var(--color-neon)" }}>
-                {s.dec ? (
-                  <>4.<Counter n={9} /></>
-                ) : (
-                  <Counter n={s.n} suffix={s.suffix} />
-                )}
-              </p>
-              <p className="mt-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-stone)" }}>{s.label}</p>
-            </div>
-          ))}
+          <div className="text-center">
+            <p className="font-display text-3xl md:text-4xl leading-none text-neon">24<span className="text-xl">/7</span></p>
+            <p className="mt-1.5 text-xs font-semibold uppercase tracking-wider text-stone">Abierto</p>
+          </div>
+          <div className="text-center">
+            <p className="font-display text-3xl md:text-4xl leading-none text-neon">365</p>
+            <p className="mt-1.5 text-xs font-semibold uppercase tracking-wider text-stone">Dias al ano</p>
+          </div>
+          <div className="text-center">
+            <p className="font-display text-3xl md:text-4xl leading-none text-neon"><Counter n={50} suffix="K+" /></p>
+            <p className="mt-1.5 text-xs font-semibold uppercase tracking-wider text-stone">Clientes Felices</p>
+          </div>
+          <div className="text-center">
+            <p className="font-display text-3xl md:text-4xl leading-none text-neon">{whole}.<Counter n={Number(dec)} /></p>
+            <p className="mt-1.5 text-xs font-semibold uppercase tracking-wider text-stone">Calificacion</p>
+          </div>
+          <div className="text-center">
+            <p className="font-display text-3xl md:text-4xl leading-none text-neon"><Counter n={reviewsK} suffix="K+" /></p>
+            <p className="mt-1.5 text-xs font-semibold uppercase tracking-wider text-stone">Reviews</p>
+          </div>
         </div>
       </div>
     </div>
@@ -326,6 +346,13 @@ function StatsBar() {
 }
 
 function LocationSection() {
+  const place = usePlaceData();
+  const ratingStr = place?.rating?.toFixed(1) ?? "4.9";
+  const [whole, dec] = ratingStr.split(".");
+  const reviewCount = place?.userRatingCount ?? 7319;
+  const reviewK = Math.floor(reviewCount / 1000);
+  const reviewRem = reviewCount % 1000;
+
   return (
     <section id="location" className="py-28 md:py-36" style={{ backgroundColor: "var(--color-cream-dark)" }}>
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -336,14 +363,14 @@ function LocationSection() {
             <div className="space-y-4">
               {[
                 { icon: "📍", label: "Direccion", value: "Av. Tiradentes esq. Roberto Pastoriza #10, Ensanche Naco, Santo Domingo" },
-                { icon: "🕐", label: "Horario", value: "Lunes a Domingo — 24 horas, todos los dias del ano" },
+                { icon: "🕐", label: "Horario", value: "Lunes a Domingo, 24 horas, todos los dias del ano" },
                 { icon: "📞", label: "Contacto", value: "+1 (809) 123-4567" },
               ].map((info, i) => (
                 <div key={i} className="flex items-start gap-4 px-5 py-4 rounded-sm border" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)" }}>
                   <span className="text-lg mt-0.5">{info.icon}</span>
                   <div>
-                    <p className="text-sm font-bold" style={{ color: "var(--color-soil)" }}>{info.label}</p>
-                    <p className="mt-0.5 text-sm" style={{ color: "var(--color-stone)" }}>{info.value}</p>
+                    <p className="text-sm font-bold text-soil">{info.label}</p>
+                    <p className="mt-0.5 text-sm text-stone">{info.value}</p>
                   </div>
                 </div>
               ))}
@@ -361,11 +388,11 @@ function LocationSection() {
             </div>
             <div className="rounded-sm px-6 py-5 text-white flex items-center justify-between" style={{ backgroundColor: "var(--color-agave)" }}>
               <div>
-                <p className="font-display text-2xl leading-none">4.<Counter n={9} /></p>
+                <p className="font-display text-2xl leading-none text-white">{whole}.<Counter n={Number(dec)} /></p>
                 <p className="mt-1 text-xs font-semibold text-white/70">Google Rating</p>
               </div>
               <div className="text-right">
-                <p className="font-display text-2xl leading-none"><Counter n={7} suffix="," /><Counter n={319} /></p>
+                <p className="font-display text-2xl leading-none text-white"><Counter n={reviewK} suffix="," /><Counter n={reviewRem} /></p>
                 <p className="mt-1 text-xs font-semibold text-white/70">Reviews</p>
               </div>
               <div className="flex gap-0.5">
@@ -381,11 +408,23 @@ function LocationSection() {
   );
 }
 
+const WA_NUMBER = "18091234567";
+
 function ContactForm() {
   const [sent, setSent] = useState(false);
-  const handleSubmit = (e: React.FormEvent) => {
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const name = fd.get("name") as string;
+    const people = fd.get("people") as string;
+    const date = fd.get("date") as string;
+    const notes = fd.get("notes") as string;
+    const msg = `Hola! Quiero reservar para ${people} el ${date} a las ${fd.get("time") || "por definir"}.\nNombre: ${name}\nNotas: ${notes}`;
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
     setSent(true);
+    formRef.current?.reset();
     setTimeout(() => setSent(false), 3000);
   };
 
@@ -393,39 +432,39 @@ function ContactForm() {
     <section className="py-28 md:py-36" style={{ backgroundColor: "var(--color-cream)" }}>
       <div className="mx-auto max-w-3xl px-6 lg:px-8 text-center">
         <SectionHeading title="Reservaciones" subtitle="Grupos grandes, eventos privados, o simplemente quieres asegurar tu mesa." align="center" />
-        <form onSubmit={handleSubmit} className="max-w-lg mx-auto space-y-4 text-left">
+        <form ref={formRef} onSubmit={handleSubmit} className="max-w-lg mx-auto space-y-4 text-left">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--color-stone)" }}>Nombre</label>
-              <input type="text" required className="w-full px-4 py-3 rounded-sm border text-sm" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }} placeholder="Tu nombre" />
+              <label className="block text-xs font-semibold mb-1.5 text-stone">Nombre</label>
+              <input name="name" type="text" required className="w-full px-4 py-3 rounded-sm border text-sm" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }} placeholder="Tu nombre" />
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--color-stone)" }}>Email</label>
-              <input type="email" required className="w-full px-4 py-3 rounded-sm border text-sm" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }} placeholder="tu@email.com" />
-            </div>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--color-stone)" }}>Personas</label>
-              <select className="w-full px-4 py-3 rounded-sm border text-sm" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }}>
+              <label className="block text-xs font-semibold mb-1.5 text-stone">Personas</label>
+              <select name="people" required className="w-full px-4 py-3 rounded-sm border text-sm" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }}>
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => <option key={n}>{n} persona{n > 1 ? "s" : ""}</option>)}
               </select>
             </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--color-stone)" }}>Fecha</label>
-              <input type="date" required className="w-full px-4 py-3 rounded-sm border text-sm" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }} />
+              <label className="block text-xs font-semibold mb-1.5 text-stone">Fecha</label>
+              <input name="date" type="date" required className="w-full px-4 py-3 rounded-sm border text-sm" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5 text-stone">Hora</label>
+              <input name="time" type="time" className="w-full px-4 py-3 rounded-sm border text-sm" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }} />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--color-stone)" }}>Notas</label>
-            <textarea rows={3} className="w-full px-4 py-3 rounded-sm border text-sm resize-none" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }} placeholder="Alergias, ocasion especial, etc." />
+            <label className="block text-xs font-semibold mb-1.5 text-stone">Notas</label>
+            <textarea name="notes" rows={3} className="w-full px-4 py-3 rounded-sm border text-sm resize-none" style={{ borderColor: "var(--color-clay)", backgroundColor: "var(--color-cream)", color: "var(--color-soil)" }} placeholder="Alergias, ocasion especial, etc." />
           </div>
           <button
             type="submit"
             className="w-full rounded-full py-3.5 text-sm font-bold text-white transition-all"
             style={{ backgroundColor: sent ? "var(--color-agave)" : "var(--color-neon)" }}
           >
-            {sent ? "Enviado!" : "Solicitar Reservacion"}
+            {sent ? "Enviado a WhatsApp!" : "Solicitar por WhatsApp"}
           </button>
         </form>
       </div>
@@ -628,9 +667,7 @@ function AboutSection() {
               viewport={{ once: true }}
               transition={{ type: "spring", damping: 15, stiffness: 200, delay: 0.3 }}
             >
-              <p className="font-display text-3xl leading-none">
-                <Counter n={414} suffix="K" />
-              </p>
+              <p className="font-display text-xl leading-none">@taconazo24</p>
               <p className="mt-1 text-xs font-semibold text-white/70">Instagram</p>
             </motion.div>
           </div>
@@ -746,6 +783,7 @@ function CartFloatingButton() {
 }
 
 export default function Home() {
+  const navOpacity = useNavScroll().opacity;
   return (
     <CartProvider>
       <div className="min-h-screen">
@@ -755,10 +793,10 @@ export default function Home() {
         <header className="fixed top-0 left-0 right-0 z-50">
           <motion.div
             className="absolute inset-0 backdrop-blur-md"
-            style={{ opacity: useNavScroll().opacity, backgroundColor: "color-mix(in oklch, var(--color-cream), transparent 30%)" }}
+            style={{ opacity: navOpacity, backgroundColor: "color-mix(in oklch, var(--color-cream), transparent 30%)" }}
           />
           <nav aria-label="Navegacion principal" className="relative flex items-center justify-between px-6 py-5 md:px-12">
-            <a href="#" className="font-display text-2xl tracking-tight" style={{ color: "var(--color-soil)" }}>
+            <a href="/" className="font-display text-2xl tracking-tight" style={{ color: "var(--color-soil)" }}>
               Taconazo<span style={{ color: "var(--color-neon)" }}>24</span>
             </a>
             <div className="hidden md:flex items-center gap-8">
