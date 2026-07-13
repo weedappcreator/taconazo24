@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-nunito);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip-link:focus {
+  position: fixed;
+  width: auto;
+  height: auto;
+  padding: 12px 20px;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  top: 8px;
+  left: 8px;
+  z-index: 9999;
+  background: oklch(0.15 0 0);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  outline: 3px solid oklch(0.55 0.18 35);
+  outline-offset: 2px;
+}
+
+*:focus-visible {
+  outline: 2px solid oklch(0.55 0.18 35);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
